@@ -6,6 +6,11 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 
+os.environ.setdefault(
+    "ENCRYPTION_KEY",
+    base64.b64encode(b"a" * 32).decode(),
+)
+
 from app.database import Base
 from app.api.deps import get_db, get_crypto
 from app.services.crypto import CryptoService
