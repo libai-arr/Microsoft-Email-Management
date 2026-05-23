@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 import msal
 from redis.asyncio import Redis
@@ -6,6 +8,8 @@ from app.config import settings
 
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 SCOPES = ["https://graph.microsoft.com/.default"]
+
+GRAPH_TIMEOUT = httpx.Timeout(30.0)
 
 
 class GraphClient:
@@ -21,10 +25,14 @@ class GraphClient:
             return cached.decode()
 
         app = msal.PublicClientApplication(client_id=client_id)
-        result = app.acquire_token_by_refresh_token(refresh_token, scopes=SCOPES)
+        result = await asyncio.to_thread(
+            app.acquire_token_by_refresh_token, refresh_token, scopes=SCOPES
+        )
 
         if "access_token" not in result:
-            raise ValueError(f"Token refresh failed: {result.get('error_description', 'unknown')}")
+            raise ValueError(
+                f"Token refresh failed: {result.get('error_description', 'unknown')}"
+            )
 
         token = result["access_token"]
         await self._redis.setex(cache_key, settings.ACCESS_TOKEN_CACHE_TTL, token)
@@ -53,15 +61,13 @@ class GraphClient:
             "$orderby": "receivedDateTime desc",
             "$select": "id,subject,from,bodyPreview,receivedDateTime,isRead",
         }
+        headers = {"Authorization": f"Bearer {token}"}
         if search:
             params["$search"] = f'"{search}"'
+            headers["ConsistencyLevel"] = "eventual"
 
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                url,
-                headers={"Authorization": f"Bearer {token}"},
-                params=params,
-            )
+        async with httpx.AsyncClient(timeout=GRAPH_TIMEOUT) as client:
+            resp = await client.get(url, headers=headers, params=params)
             resp.raise_for_status()
             return resp.json()
 
@@ -72,7 +78,7 @@ class GraphClient:
         url = f"{GRAPH_BASE}/me/messages/{message_id}"
         params = {"$select": "id,subject,from,receivedDateTime,body"}
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=GRAPH_TIMEOUT) as client:
             resp = await client.get(
                 url,
                 headers={"Authorization": f"Bearer {token}"},
@@ -84,7 +90,9 @@ class GraphClient:
     async def validate_token(self, client_id: str, refresh_token: str) -> bool:
         try:
             app = msal.PublicClientApplication(client_id=client_id)
-            result = app.acquire_token_by_refresh_token(refresh_token, scopes=SCOPES)
+            result = await asyncio.to_thread(
+                app.acquire_token_by_refresh_token, refresh_token, scopes=SCOPES
+            )
             return "access_token" in result
         except Exception:
             return False
