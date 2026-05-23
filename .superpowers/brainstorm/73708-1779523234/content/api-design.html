@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Design</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #e0e0e0; font-family: -apple-system, "PingFang SC", "Noto Sans SC", sans-serif; padding: 40px; line-height: 1.6; }
+  h2 { font-size: 1.6rem; margin-bottom: 8px; color: #fff; }
+  .subtitle { color: #888; margin-bottom: 32px; font-size: 0.95rem; }
+
+  .api-group {
+    max-width: 960px;
+    margin: 0 auto 28px;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .api-group-header {
+    background: #1a1a1a;
+    padding: 14px 20px;
+    border-bottom: 1px solid #2a2a2a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .api-group-header h3 {
+    font-size: 0.95rem;
+    color: #fff;
+  }
+  .api-group-header .prefix {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #4a9eff;
+    background: #1a1a2a;
+    border: 1px solid #2a2a3a;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .endpoint {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 20px;
+    border-bottom: 1px solid #1a1a1a;
+    gap: 12px;
+  }
+  .endpoint:last-child { border-bottom: none; }
+
+  .method {
+    font-family: monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    width: 56px;
+    text-align: center;
+    margin-top: 2px;
+  }
+  .method.get { background: #1a2a1a; color: #4a9; border: 1px solid #2a3a2a; }
+  .method.post { background: #1a1a2a; color: #6a8eff; border: 1px solid #2a2a3a; }
+  .method.put { background: #2a2a1a; color: #cc9; border: 1px solid #3a3a2a; }
+  .method.delete { background: #2a1a1a; color: #e66; border: 1px solid #3a2a2a; }
+  .method.patch { background: #2a1a2a; color: #c8f; border: 1px solid #3a2a3a; }
+
+  .endpoint-info { flex: 1; }
+  .endpoint-path {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+    margin-bottom: 4px;
+  }
+  .endpoint-path .param { color: #f5a623; }
+  .endpoint-desc {
+    font-size: 0.78rem;
+    color: #777;
+    line-height: 1.5;
+  }
+  .endpoint-detail {
+    font-size: 0.72rem;
+    color: #555;
+    margin-top: 4px;
+    font-family: monospace;
+    line-height: 1.6;
+  }
+
+  .note-box {
+    max-width: 960px;
+    margin: 0 auto 28px;
+    padding: 16px 20px;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    border-left: 3px solid #4a9eff;
+  }
+  .note-box h4 {
+    font-size: 0.85rem;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .note-box p, .note-box li {
+    font-size: 0.8rem;
+    color: #999;
+    line-height: 1.7;
+  }
+  .note-box ul { list-style: none; }
+  .note-box li::before { content: "• "; color: #4a9eff; }
+</style>
+</head>
+<body>
+
+<h2>Section 3: API Design</h2>
+<p class="subtitle">RESTful API 端点设计 — FastAPI 路由结构</p>
+
+<!-- Mailbox CRUD & List -->
+<div class="api-group">
+  <div class="api-group-header">
+    <h3>邮箱管理</h3>
+    <span class="prefix">/api/mailboxes</span>
+  </div>
+
+  <div class="endpoint">
+    <span class="method get">GET</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes</div>
+      <div class="endpoint-desc">分页查询邮箱列表，支持搜索和分组筛选</div>
+      <div class="endpoint-detail">Query: ?page=1 &page_size=10 &search=keyword &group_id=uuid</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method post">POST</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/import</div>
+      <div class="endpoint-desc">批量导入邮箱（追加模式）。接收前端已解析的结构化数组</div>
+      <div class="endpoint-detail">Body: { items: [{ email, password, client_id, refresh_token }], mode: "append" | "overwrite" }</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method post">POST</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/export</div>
+      <div class="endpoint-desc">导出选中或全部邮箱数据为 CSV/Excel 文件流</div>
+      <div class="endpoint-detail">Body: { ids?: uuid[], format: "csv" | "xlsx", include_all?: bool }</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method delete">DELETE</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/batch</div>
+      <div class="endpoint-desc">批量删除选中的邮箱</div>
+      <div class="endpoint-detail">Body: { ids: uuid[] }</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method patch">PATCH</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/batch/group</div>
+      <div class="endpoint-desc">批量设置分组</div>
+      <div class="endpoint-detail">Body: { ids: uuid[], group_id: uuid }</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method post">POST</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/batch/copy</div>
+      <div class="endpoint-desc">批量获取复制数据（账号/密码/账号----密码）</div>
+      <div class="endpoint-detail">Body: { ids: uuid[], type: "email" | "password" | "combined" } → 返回拼接文本</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method delete">DELETE</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/<span class="param">{id}</span></div>
+      <div class="endpoint-desc">删除单个邮箱</div>
+    </div>
+  </div>
+</div>
+
+<!-- Groups -->
+<div class="api-group">
+  <div class="api-group-header">
+    <h3>分组管理</h3>
+    <span class="prefix">/api/groups</span>
+  </div>
+
+  <div class="endpoint">
+    <span class="method get">GET</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/groups</div>
+      <div class="endpoint-desc">获取所有分组列表（含每组邮箱计数）</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method post">POST</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/groups</div>
+      <div class="endpoint-desc">创建新分组</div>
+      <div class="endpoint-detail">Body: { name: string, description?: string }</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method put">PUT</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/groups/<span class="param">{id}</span></div>
+      <div class="endpoint-desc">更新分组名称/描述</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method delete">DELETE</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/groups/<span class="param">{id}</span></div>
+      <div class="endpoint-desc">删除分组（邮箱回归默认分组）</div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Viewing -->
+<div class="api-group">
+  <div class="api-group-header">
+    <h3>邮件查看</h3>
+    <span class="prefix">/api/mailboxes/{id}/emails</span>
+  </div>
+
+  <div class="endpoint">
+    <span class="method get">GET</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/<span class="param">{id}</span>/emails</div>
+      <div class="endpoint-desc">获取邮件列表（懒加载分页），支持收件箱/垃圾箱切换</div>
+      <div class="endpoint-detail">Query: ?folder=inbox|junk &page=1 &page_size=20 &search=keyword</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method get">GET</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/mailboxes/<span class="param">{id}</span>/emails/<span class="param">{message_id}</span></div>
+      <div class="endpoint-desc">获取单封邮件的完整 HTML 正文（安全过滤后）</div>
+    </div>
+  </div>
+</div>
+
+<!-- Token Health -->
+<div class="api-group">
+  <div class="api-group-header">
+    <h3>令牌状态</h3>
+    <span class="prefix">/api/tokens</span>
+  </div>
+
+  <div class="endpoint">
+    <span class="method get">GET</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/tokens/status</div>
+      <div class="endpoint-desc">批量获取令牌健康状态（前端轮询接口）</div>
+      <div class="endpoint-detail">Query: ?ids=uuid1,uuid2,... → [{ id, status, checked_at }]</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method post">POST</span>
+    <div class="endpoint-info">
+      <div class="endpoint-path">/api/tokens/check</div>
+      <div class="endpoint-desc">手动触发选中邮箱的令牌健康检查（异步入队）</div>
+      <div class="endpoint-detail">Body: { ids: uuid[] } → Worker 异步执行</div>
+    </div>
+  </div>
+</div>
+
+<!-- Design Notes -->
+<div class="note-box">
+  <h4>API Design Decisions</h4>
+  <ul>
+    <li>批量复制（batch/copy）返回拼接文本而非原始数据 — 密码解密在后端完成，前端仅负责写入剪贴板</li>
+    <li>导出（export）使用 POST 而非 GET — 因为需要传递可能很长的 ID 列表</li>
+    <li>邮件接口不做缓存 — 每次实时调用 Graph API，确保最新数据</li>
+    <li>令牌状态轮询间隔建议 30 秒，避免对后端造成压力</li>
+    <li>所有敏感操作（批量复制/导出/删除/覆盖导入）自动记录 audit_logs</li>
+    <li>邮件正文返回前执行 HTML sanitize（移除 script/iframe/事件处理器），防止 XSS</li>
+  </ul>
+</div>
+
+</body>
+</html>

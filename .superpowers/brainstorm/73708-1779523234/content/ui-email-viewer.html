@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI - Email Viewer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #e0e0e0; font-family: -apple-system, "PingFang SC", "Noto Sans SC", sans-serif; padding: 30px; line-height: 1.6; }
+  h2 { font-size: 1.6rem; margin-bottom: 8px; color: #fff; }
+  .subtitle { color: #888; margin-bottom: 28px; font-size: 0.95rem; }
+
+  /* Modal overlay */
+  .modal-overlay {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: rgba(0,0,0,0.5);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  /* Modal */
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    box-shadow: 0 16px 64px rgba(0,0,0,0.4);
+    color: #333;
+    font-size: 13px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 620px;
+  }
+
+  .modal-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .modal-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .modal-header h3 .email-addr {
+    color: #1890ff;
+    font-weight: 500;
+  }
+  .modal-close {
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    width: 28px; height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+
+  /* Split layout */
+  .modal-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Left panel */
+  .left-panel {
+    width: 340px;
+    border-right: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    background: #fafafa;
+  }
+
+  /* Folder tabs */
+  .folder-tabs {
+    display: flex;
+    padding: 0 16px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .folder-tab {
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .folder-tab.active {
+    color: #1890ff;
+    border-bottom-color: #1890ff;
+    font-weight: 500;
+  }
+  .folder-count {
+    font-size: 10px;
+    background: #f0f0f0;
+    color: #999;
+    padding: 0 5px;
+    border-radius: 8px;
+  }
+  .folder-tab.active .folder-count {
+    background: #e6f7ff;
+    color: #1890ff;
+  }
+
+  /* Search + refresh */
+  .list-toolbar {
+    display: flex;
+    padding: 10px 12px;
+    gap: 6px;
+    flex-shrink: 0;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .list-search {
+    flex: 1;
+    padding: 5px 10px;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #fafafa;
+    color: #333;
+  }
+  .refresh-btn {
+    padding: 5px 10px;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #fff;
+    cursor: pointer;
+    color: #666;
+    white-space: nowrap;
+  }
+  .refresh-btn:hover { border-color: #1890ff; color: #1890ff; }
+
+  /* Mail list */
+  .mail-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .mail-card {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .mail-card:hover { background: #f5f5f5; }
+  .mail-card.active {
+    background: #e6f7ff;
+    border-left: 3px solid #1890ff;
+    padding-left: 13px;
+  }
+  .mail-card.unread .mail-sender { font-weight: 600; }
+
+  .mail-sender {
+    font-size: 12.5px;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mail-subject {
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mail-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mail-preview {
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    margin-right: 8px;
+  }
+  .mail-time {
+    font-size: 10px;
+    color: #bbb;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Right panel */
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Email header */
+  .email-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+  }
+  .email-subject-line {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+  }
+  .email-from-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .sender-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #1890ff;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .sender-info .sender-name { color: #333; font-weight: 500; }
+  .sender-info .sender-email { color: #999; font-size: 11px; }
+  .email-date {
+    margin-left: auto;
+    color: #999;
+    font-size: 11px;
+  }
+
+  /* Email body */
+  .email-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    font-size: 13.5px;
+    color: #333;
+    line-height: 1.7;
+  }
+
+  /* Verification code highlight */
+  .verify-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff7e6;
+    border: 1px solid #ffd591;
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin: 8px 0;
+  }
+  .verify-code .code {
+    font-family: "SF Mono", monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fa8c16;
+    letter-spacing: 4px;
+  }
+  .verify-code .copy-btn {
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid #ffd591;
+    background: #fff;
+    font-size: 11px;
+    color: #fa8c16;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .verify-code .copy-btn:hover { background: #fff7e6; }
+
+  .email-link {
+    color: #1890ff;
+    text-decoration: underline;
+  }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: none; /* hidden because we show active email */
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-size: 14px;
+  }
+
+  .annotation {
+    max-width: 1100px;
+    margin: 16px auto 0;
+    padding: 14px 18px;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #999;
+    line-height: 1.7;
+  }
+  .annotation strong { color: #e0e0e0; }
+</style>
+</head>
+<body>
+
+<h2>Section 4c: 邮件在线查看详情页</h2>
+<p class="subtitle">响应式大号模态框 — 左侧邮件列表 + 右侧正文渲染</p>
+
+<div class="modal-overlay">
+  <div class="modal">
+    <!-- Header -->
+    <div class="modal-header">
+      <h3>📬 邮件列表 — <span class="email-addr">alice.wang@outlook.com</span></h3>
+      <div class="modal-close">✕</div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Left Panel -->
+      <div class="left-panel">
+        <!-- Folder Tabs -->
+        <div class="folder-tabs">
+          <div class="folder-tab active">📥 收件箱 <span class="folder-count">24</span></div>
+          <div class="folder-tab">🗑 垃圾箱 <span class="folder-count">8</span></div>
+        </div>
+
+        <!-- Search + Refresh -->
+        <div class="list-toolbar">
+          <input class="list-search" placeholder="搜索发件人、主题..." />
+          <button class="refresh-btn">🔄 刷新</button>
+        </div>
+
+        <!-- Mail List -->
+        <div class="mail-list">
+          <div class="mail-card active unread">
+            <div class="mail-sender">Microsoft Account Team</div>
+            <div class="mail-subject">Your security code</div>
+            <div class="mail-meta">
+              <span class="mail-preview">Your verification code is 847293...</span>
+              <span class="mail-time">10:32</span>
+            </div>
+          </div>
+
+          <div class="mail-card unread">
+            <div class="mail-sender">LinkedIn</div>
+            <div class="mail-subject">You have 5 new connection requests</div>
+            <div class="mail-meta">
+              <span class="mail-preview">See who wants to connect with you...</span>
+              <span class="mail-time">09:15</span>
+            </div>
+          </div>
+
+          <div class="mail-card">
+            <div class="mail-sender">GitHub</div>
+            <div class="mail-subject">[multi-mailbox] New pull request #42</div>
+            <div class="mail-meta">
+              <span class="mail-preview">alice opened a new pull request...</span>
+              <span class="mail-time">昨天</span>
+            </div>
+          </div>
+
+          <div class="mail-card">
+            <div class="mail-sender">Azure DevOps</div>
+            <div class="mail-subject">Build succeeded: Pipeline #128</div>
+            <div class="mail-meta">
+              <span class="mail-preview">Your pipeline has completed successfully...</span>
+              <span class="mail-time">昨天</span>
+            </div>
+          </div>
+
+          <div class="mail-card">
+            <div class="mail-sender">Outlook Team</div>
+            <div class="mail-subject">Welcome to your new Outlook account</div>
+            <div class="mail-meta">
+              <span class="mail-preview">Get started with tips and tricks...</span>
+              <span class="mail-time">05-20</span>
+            </div>
+          </div>
+
+          <div class="mail-card">
+            <div class="mail-sender">Microsoft 365</div>
+            <div class="mail-subject">Your subscription is expiring soon</div>
+            <div class="mail-meta">
+              <span class="mail-preview">Renew your subscription to keep...</span>
+              <span class="mail-time">05-18</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <div class="right-panel">
+        <!-- Email Header -->
+        <div class="email-header">
+          <div class="email-subject-line">Your security code</div>
+          <div class="email-from-line">
+            <div class="sender-avatar">M</div>
+            <div class="sender-info">
+              <div class="sender-name">Microsoft Account Team</div>
+              <div class="sender-email">account-security@microsoft.com</div>
+            </div>
+            <div class="email-date">2026-05-23 10:32:18</div>
+          </div>
+        </div>
+
+        <!-- Email Body -->
+        <div class="email-body">
+          <p style="margin-bottom: 16px;">Dear user,</p>
+          <p style="margin-bottom: 16px;">We received a request to verify your identity. Please use the following security code to complete your sign-in:</p>
+
+          <div class="verify-code">
+            <span class="code">847293</span>
+            <button class="copy-btn">📋 一键复制</button>
+          </div>
+
+          <p style="margin: 16px 0;">This code will expire in <strong>10 minutes</strong>. If you didn't request this code, please ignore this email or <a class="email-link" href="#">reset your password</a>.</p>
+
+          <p style="margin-bottom: 16px; color: #999; font-size: 12px;">
+            For security, never share this code with anyone. Microsoft will never ask for your code by phone or email.
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 20px 0;" />
+
+          <p style="font-size: 11px; color: #bbb;">
+            This is an automated message from Microsoft Account Team.<br>
+            Microsoft Corporation, One Microsoft Way, Redmond, WA 98052
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="annotation">
+  <strong>核心交互：</strong>
+  ① 左侧收件箱/垃圾箱 Tab 切换 · ② 搜索框实时过滤发件人和主题 · ③ 刷新按钮异步拉取最新邮件（调用 Graph API）· ④ 点击邮件卡片在右侧渲染 HTML 正文 · ⑤ 验证码自动识别高亮 + 一键复制 · ⑥ 链接安全跳转（target="_blank" + rel="noopener"）
+  <br><br>
+  <strong>Ant Design 组件：</strong>
+  Modal（响应式大号）· Tabs（收件箱/垃圾箱）· Input.Search · List + 自定义 Card · Spin（加载态）· Empty（未选中状态：「请从左侧选择一封邮件查看」）
+  <br><br>
+  <strong>安全措施：</strong>
+  邮件 HTML 通过后端 <code>bleach</code> 或 <code>DOMPurify</code> 过滤 script/iframe/on* 事件处理器后返回前端 · 前端使用 <code>dangerouslySetInnerHTML</code> + sandbox iframe 双重隔离渲染
+</div>
+
+</body>
+</html>

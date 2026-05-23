@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI - Main List</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #e0e0e0; font-family: -apple-system, "PingFang SC", "Noto Sans SC", sans-serif; padding: 40px; line-height: 1.6; }
+  h2 { font-size: 1.6rem; margin-bottom: 8px; color: #fff; }
+  .subtitle { color: #888; margin-bottom: 28px; font-size: 0.95rem; }
+
+  /* ===== Mockup Frame ===== */
+  .mockup-frame {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #f5f6fa;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    color: #333;
+    font-size: 13px;
+  }
+
+  /* Top bar */
+  .app-header {
+    background: #001529;
+    color: #fff;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+  .app-logo { font-weight: 600; font-size: 15px; letter-spacing: 0.5px; }
+  .app-logo span { color: #1890ff; }
+
+  /* Page content */
+  .page-content {
+    padding: 20px 24px;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    color: #333;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .btn.primary {
+    background: #1890ff;
+    color: #fff;
+    border-color: #1890ff;
+  }
+  .btn.danger {
+    color: #ff4d4f;
+    border-color: #ff4d4f;
+  }
+  .btn .arrow { font-size: 10px; margin-left: 2px; }
+
+  .search-box {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .search-input {
+    padding: 6px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 12px;
+    width: 200px;
+    background: #fff;
+    color: #333;
+  }
+  .group-select {
+    padding: 6px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #fff;
+    color: #333;
+    min-width: 120px;
+  }
+
+  /* Data Grid */
+  .data-grid {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    overflow: hidden;
+  }
+  .grid-header, .grid-row {
+    display: grid;
+    grid-template-columns: 36px 40px 1fr 120px 100px 100px 70px 120px;
+    align-items: center;
+    padding: 0 12px;
+  }
+  .grid-header {
+    background: #fafafa;
+    border-bottom: 1px solid #e8e8e8;
+    font-weight: 600;
+    font-size: 12px;
+    color: #666;
+  }
+  .grid-header > div, .grid-row > div {
+    padding: 10px 6px;
+  }
+  .grid-row {
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 12px;
+    transition: background 0.15s;
+  }
+  .grid-row:hover { background: #e6f7ff; }
+  .grid-row:last-child { border-bottom: none; }
+
+  .checkbox {
+    width: 14px; height: 14px;
+    border: 1.5px solid #d9d9d9;
+    border-radius: 3px;
+    background: #fff;
+  }
+  .checkbox.checked {
+    background: #1890ff;
+    border-color: #1890ff;
+    position: relative;
+  }
+  .checkbox.checked::after {
+    content: "✓";
+    color: #fff;
+    font-size: 10px;
+    position: absolute;
+    top: -1px; left: 1.5px;
+  }
+
+  .email-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #1890ff;
+  }
+  .copy-icon {
+    font-size: 10px;
+    color: #bbb;
+    cursor: pointer;
+  }
+  .copy-icon:hover { color: #1890ff; }
+
+  .pwd-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: monospace;
+    font-size: 12px;
+  }
+  .pwd-dots { letter-spacing: 2px; color: #999; }
+  .toggle-icon, .copy-pwd {
+    font-size: 10px;
+    color: #bbb;
+    cursor: pointer;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .tag.default { background: #f0f0f0; color: #666; }
+  .tag.marketing { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+  .tag.vip { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+  .dot.green { background: #52c41a; box-shadow: 0 0 4px rgba(82,196,26,0.4); }
+  .dot.yellow { background: #faad14; box-shadow: 0 0 4px rgba(250,173,20,0.4); }
+  .dot.red { background: #ff4d4f; box-shadow: 0 0 4px rgba(255,77,79,0.4); }
+
+  .channel-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    background: #f6ffed;
+    color: #52c41a;
+    border: 1px solid #b7eb8f;
+  }
+
+  .action-btns {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .action-link {
+    color: #1890ff;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .action-link.danger { color: #ff4d4f; }
+  .action-link.more { color: #999; }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #999;
+  }
+  .page-btns {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .page-btn {
+    width: 28px; height: 28px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+  }
+  .page-btn.active {
+    background: #1890ff;
+    color: #fff;
+    border-color: #1890ff;
+  }
+  .page-size-select {
+    padding: 4px 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    font-size: 12px;
+    background: #fff;
+    color: #333;
+  }
+
+  /* Dropdown hint */
+  .dropdown-hint {
+    position: relative;
+  }
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 4px 0;
+    z-index: 10;
+    min-width: 160px;
+    margin-top: 4px;
+  }
+  .dropdown-item {
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+  }
+  .dropdown-item:hover { background: #e6f7ff; }
+
+  .section-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #666;
+    margin-bottom: 8px;
+    margin-top: 24px;
+  }
+
+  .annotation {
+    max-width: 1100px;
+    margin: 16px auto 0;
+    padding: 14px 18px;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #999;
+    line-height: 1.7;
+  }
+  .annotation strong { color: #e0e0e0; }
+</style>
+</head>
+<body>
+
+<h2>Section 4a: 邮箱管理主列表</h2>
+<p class="subtitle">核心工作台 — 数据网格 + 搜索筛选 + 批量操作工具栏</p>
+
+<div class="mockup-frame">
+  <!-- App Header -->
+  <div class="app-header">
+    <div class="app-logo"><span>📮</span> 多邮箱管理系统</div>
+    <div style="font-size: 12px; color: #8c8c8c;">v1.0</div>
+  </div>
+
+  <div class="page-content">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="btn primary">+ 导入邮箱</button>
+      <button class="btn">⬇ 导出备份</button>
+      <div class="dropdown-hint">
+        <button class="btn">📋 批量复制 <span class="arrow">▾</span></button>
+        <div class="dropdown-menu">
+          <div class="dropdown-item">批量复制账号</div>
+          <div class="dropdown-item">批量复制密码</div>
+          <div class="dropdown-item">批量复制账号----密码</div>
+        </div>
+      </div>
+      <button class="btn">🏷 批量设置分组</button>
+      <button class="btn danger">🗑 批量删除</button>
+
+      <div class="search-box">
+        <select class="group-select">
+          <option>全部分组</option>
+          <option>默认分组</option>
+          <option>营销A组</option>
+          <option>VIP客户</option>
+        </select>
+        <input class="search-input" placeholder="🔍 搜索邮箱地址..." />
+      </div>
+    </div>
+
+    <!-- Data Grid -->
+    <div class="data-grid">
+      <div class="grid-header">
+        <div><div class="checkbox"></div></div>
+        <div>#</div>
+        <div>邮箱地址</div>
+        <div>密码</div>
+        <div>分组</div>
+        <div>令牌状态</div>
+        <div>通道</div>
+        <div>操作</div>
+      </div>
+
+      <div class="grid-row">
+        <div><div class="checkbox checked"></div></div>
+        <div>1</div>
+        <div class="email-cell">alice.wang@outlook.com <span class="copy-icon">📋</span></div>
+        <div class="pwd-cell"><span class="pwd-dots">••••••</span> <span class="toggle-icon">👁</span> <span class="copy-pwd">📋</span></div>
+        <div><span class="tag marketing">营销A组</span></div>
+        <div><span class="status-dot"><span class="dot green"></span> 正常</span></div>
+        <div><span class="channel-badge">O2</span></div>
+        <div class="action-btns"><a class="action-link">查看</a> <a class="action-link danger">删除</a> <a class="action-link more">...</a></div>
+      </div>
+
+      <div class="grid-row">
+        <div><div class="checkbox"></div></div>
+        <div>2</div>
+        <div class="email-cell">bob.zhang@outlook.com <span class="copy-icon">📋</span></div>
+        <div class="pwd-cell"><span class="pwd-dots">••••••</span> <span class="toggle-icon">👁</span> <span class="copy-pwd">📋</span></div>
+        <div><span class="tag default">默认分组</span></div>
+        <div><span class="status-dot"><span class="dot green"></span> 正常</span></div>
+        <div><span class="channel-badge">O2</span></div>
+        <div class="action-btns"><a class="action-link">查看</a> <a class="action-link danger">删除</a> <a class="action-link more">...</a></div>
+      </div>
+
+      <div class="grid-row">
+        <div><div class="checkbox checked"></div></div>
+        <div>3</div>
+        <div class="email-cell">charlie.li@outlook.com <span class="copy-icon">📋</span></div>
+        <div class="pwd-cell"><span class="pwd-dots">••••••</span> <span class="toggle-icon">👁</span> <span class="copy-pwd">📋</span></div>
+        <div><span class="tag vip">VIP客户</span></div>
+        <div><span class="status-dot"><span class="dot yellow"></span> 检测中</span></div>
+        <div><span class="channel-badge">O2</span></div>
+        <div class="action-btns"><a class="action-link">查看</a> <a class="action-link danger">删除</a> <a class="action-link more">...</a></div>
+      </div>
+
+      <div class="grid-row">
+        <div><div class="checkbox"></div></div>
+        <div>4</div>
+        <div class="email-cell">diana.chen@outlook.com <span class="copy-icon">📋</span></div>
+        <div class="pwd-cell"><span class="pwd-dots">••••••</span> <span class="toggle-icon">👁</span> <span class="copy-pwd">📋</span></div>
+        <div><span class="tag marketing">营销A组</span></div>
+        <div><span class="status-dot"><span class="dot red"></span> 失效</span></div>
+        <div><span class="channel-badge">O2</span></div>
+        <div class="action-btns"><a class="action-link">查看</a> <a class="action-link danger">删除</a> <a class="action-link more">...</a></div>
+      </div>
+
+      <div class="grid-row">
+        <div><div class="checkbox"></div></div>
+        <div>5</div>
+        <div class="email-cell">emma.wu@outlook.com <span class="copy-icon">📋</span></div>
+        <div class="pwd-cell"><span class="pwd-dots">••••••</span> <span class="toggle-icon">👁</span> <span class="copy-pwd">📋</span></div>
+        <div><span class="tag default">默认分组</span></div>
+        <div><span class="status-dot"><span class="dot green"></span> 正常</span></div>
+        <div><span class="channel-badge">O2</span></div>
+        <div class="action-btns"><a class="action-link">查看</a> <a class="action-link danger">删除</a> <a class="action-link more">...</a></div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div>共 <strong style="color:#333;">128</strong> 条 · 已选 <strong style="color:#1890ff;">2</strong> 条</div>
+      <div class="page-btns">
+        <select class="page-size-select">
+          <option>10 条/页</option>
+          <option>20 条/页</option>
+          <option>50 条/页</option>
+        </select>
+        <span class="page-btn">‹</span>
+        <span class="page-btn active">1</span>
+        <span class="page-btn">2</span>
+        <span class="page-btn">3</span>
+        <span class="page-btn">...</span>
+        <span class="page-btn">13</span>
+        <span class="page-btn">›</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="annotation">
+  <strong>Ant Design 组件映射：</strong>
+  ProTable（数据网格 + 分页 + 行选择）· Dropdown（批量复制菜单）· Tag（分组标签）· Badge + 自定义 StatusDot（令牌状态灯）· Input.Search（搜索框）· Select（分组筛选）· Button（操作按钮）· Popconfirm（删除二次确认）
+</div>
+
+</body>
+</html>
