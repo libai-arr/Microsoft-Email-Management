@@ -34,6 +34,9 @@ def sanitize_html(html: str) -> str:
         strip=True,
     )
 
+    # Strip existing target/rel to avoid duplicates, then add safe defaults
+    cleaned = re.sub(r'\s*target\s*=\s*"[^"]*"', '', cleaned)
+    cleaned = re.sub(r'\s*rel\s*=\s*"[^"]*"', '', cleaned)
     cleaned = re.sub(
         r'<a\s',
         '<a target="_blank" rel="noopener noreferrer" ',
