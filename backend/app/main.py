@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.groups import router as groups_router
+from app.api.mailboxes import router as mailboxes_router
 
 app = FastAPI(title="多邮箱管理系统")
 
@@ -14,3 +15,4 @@ app.add_middleware(
 )
 
 app.include_router(groups_router, prefix="/api/groups", tags=["groups"])
+app.include_router(mailboxes_router, prefix="/api/mailboxes", tags=["mailboxes"])
