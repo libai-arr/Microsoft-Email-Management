@@ -31,11 +31,19 @@ def _parse_line(line: str) -> ParsedMailbox | None:
     if len(parts) != 4:
         return None
 
+    email = parts[0].strip()
+    password = parts[1].strip()
+    client_id = parts[2].strip()
+    refresh_token = parts[3].strip()
+
+    if not all([email, password, client_id, refresh_token]):
+        return None
+
     return ParsedMailbox(
-        email=parts[0].strip(),
-        password=parts[1].strip(),
-        client_id=parts[2].strip(),
-        refresh_token=parts[3].strip(),
+        email=email,
+        password=password,
+        client_id=client_id,
+        refresh_token=refresh_token,
     )
 
 
@@ -51,10 +59,14 @@ def parse_import_text(text: str) -> ParseResult:
         parsed = _parse_line(line)
         if parsed is None:
             field_count = len(line.split("----")) if "----" in line else len(line.split())
+            if field_count < 4:
+                reason = f"字段数量不足（期望 4 个字段，实际 {field_count} 个）"
+            else:
+                reason = f"字段数量过多（期望 4 个字段，实际 {field_count} 个）"
             errors.append(ImportError(
                 line_number=line_num,
                 content=line,
-                reason=f"字段数量不足（期望 4 个字段，实际 {field_count} 个）",
+                reason=reason,
             ))
         else:
             valid.append(parsed)

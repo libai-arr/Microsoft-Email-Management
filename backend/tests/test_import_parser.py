@@ -1,6 +1,6 @@
 import pytest
 
-from app.services.import_parser import parse_import_text, ImportError as ParseImportError
+from app.services.import_parser import parse_import_text
 
 
 class TestParseImportText:
