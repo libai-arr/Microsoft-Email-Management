@@ -15,7 +15,6 @@ from app.schemas.mailbox import (
     MailboxImportRequest,
     MailboxImportResponse,
     MailboxExportRequest,
-    BatchGroupRequest,
 )
 from app.services.audit import log_audit
 from app.services.crypto import CryptoService
@@ -155,14 +154,3 @@ async def delete_mailbox(mailbox_id: UUID, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
 
-@router.patch("/batch/group")
-async def batch_set_group(
-    body: BatchGroupRequest,
-    db: AsyncSession = Depends(get_db),
-):
-    for mid in body.ids:
-        mailbox = await db.get(Mailbox, mid)
-        if mailbox:
-            mailbox.group_id = body.group_id
-    await db.commit()
-    return {"ok": True}
