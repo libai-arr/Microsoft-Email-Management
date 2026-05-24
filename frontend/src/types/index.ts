@@ -39,6 +39,7 @@ export interface EmailSummary {
   preview: string;
   received_at: string;
   is_read: boolean;
+  folder?: string;
 }
 
 export interface EmailDetail {

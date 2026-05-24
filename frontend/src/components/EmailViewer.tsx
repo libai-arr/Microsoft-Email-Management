@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Modal, Tabs, Input, Button, List, Spin, Empty, Typography } from 'antd';
+import { Modal, Tabs, Input, Button, List, Spin, Empty, Typography, Tag } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useEmails } from '@/hooks/useEmails';
 import type { EmailSummary } from '@/types';
@@ -14,7 +14,7 @@ interface Props {
 
 export default function EmailViewer({ open, mailboxId, email, onClose }: Props) {
   const { emails, detail, loading, fetchList, fetchDetail } = useEmails(mailboxId);
-  const [folder, setFolder] = useState<string>('inbox');
+  const [folder, setFolder] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -37,20 +37,6 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
     setSelectedId(msg.id);
     fetchDetail(msg.id);
   };
-
-  const codeRegex = /\b(\d{4,8})\b/g;
-
-  const renderBodyWithCodes = (html: string) => {
-    const parts = html.split(/(<[^>]*>)/g);
-    const enhanced = parts.map(part => {
-      if (part.startsWith('<')) return part;
-      return part.replace(codeRegex, (match) => {
-        return `<span style="background:#fff7e6;border:1px solid #ffd591;border-radius:4px;padding:2px 8px;font-family:monospace;font-size:18px;font-weight:700;color:#fa8c16;letter-spacing:2px">${match}</span> <button onclick="navigator.clipboard.writeText('${match}');this.textContent='已复制'" style="border:1px solid #ffd591;background:#fff;border-radius:4px;padding:2px 8px;font-size:11px;color:#fa8c16;cursor:pointer">复制</button>`;
-      });
-    }).join('');
-    return enhanced;
-  };
-
   return (
     <Modal
       title={`邮件列表 — ${email}`}
@@ -68,6 +54,7 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
           onChange={setFolder}
           style={{ padding: '0 12px' }}
           items={[
+            { key: 'all', label: '全部' },
             { key: 'inbox', label: '收件箱' },
             { key: 'junk', label: '垃圾箱' },
           ]}
@@ -106,8 +93,16 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
                       fontWeight: item.is_read ? 'normal' : 600,
                       fontSize: 13, marginBottom: 2,
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      display: 'flex', alignItems: 'center', gap: 4,
                     }}>
-                      {item.sender_name || item.sender_email}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.sender_name || item.sender_email}
+                      </span>
+                      {item.folder === 'junk' && (
+                        <Tag color="red" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px', flexShrink: 0 }}>
+                          垃圾箱
+                        </Tag>
+                      )}
                     </div>
                     <div style={{
                       fontSize: 12, color: '#555', marginBottom: 2,
@@ -162,7 +157,7 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
             </div>
             <div style={{ flex: 1, overflow: 'auto' }}>
               <iframe
-                srcDoc={renderBodyWithCodes(detail.body_html)}
+                srcDoc={detail.body_html}
                 sandbox="allow-same-origin"
                 style={{ width: '100%', height: '100%', border: 'none' }}
                 title="email body"
