@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import httpx
 import msal
@@ -6,8 +7,10 @@ from redis.asyncio import Redis
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
-SCOPES = ["https://graph.microsoft.com/.default"]
+SCOPES = ["https://graph.microsoft.com/Mail.Read"]
 
 GRAPH_TIMEOUT = httpx.Timeout(30.0)
 
@@ -17,12 +20,14 @@ class GraphClient:
         self._redis = redis
 
     async def _get_access_token(
-        self, client_id: str, refresh_token: str, mailbox_id: str
+        self, client_id: str, refresh_token: str, mailbox_id: str,
+        *, force_refresh: bool = False,
     ) -> str:
         cache_key = f"access_token:{mailbox_id}"
-        cached = await self._redis.get(cache_key)
-        if cached:
-            return cached.decode()
+        if not force_refresh:
+            cached = await self._redis.get(cache_key)
+            if cached:
+                return cached.decode()
 
         app = msal.PublicClientApplication(client_id=client_id)
         result = await asyncio.to_thread(
@@ -30,6 +35,10 @@ class GraphClient:
         )
 
         if "access_token" not in result:
+            logger.error(
+                "MSAL token refresh failed for mailbox %s: %s",
+                mailbox_id, result.get("error_description", result),
+            )
             raise ValueError(
                 f"Token refresh failed: {result.get('error_description', 'unknown')}"
             )
@@ -68,6 +77,13 @@ class GraphClient:
 
         async with httpx.AsyncClient(timeout=GRAPH_TIMEOUT) as client:
             resp = await client.get(url, headers=headers, params=params)
+            if resp.status_code == 401:
+                logger.warning("Graph 401 for mailbox %s, retrying with fresh token", mailbox_id)
+                token = await self._get_access_token(
+                    client_id, refresh_token, mailbox_id, force_refresh=True,
+                )
+                headers["Authorization"] = f"Bearer {token}"
+                resp = await client.get(url, headers=headers, params=params)
             resp.raise_for_status()
             return resp.json()
 
@@ -78,12 +94,16 @@ class GraphClient:
         url = f"{GRAPH_BASE}/me/messages/{message_id}"
         params = {"$select": "id,subject,from,receivedDateTime,body"}
 
+        headers = {"Authorization": f"Bearer {token}"}
         async with httpx.AsyncClient(timeout=GRAPH_TIMEOUT) as client:
-            resp = await client.get(
-                url,
-                headers={"Authorization": f"Bearer {token}"},
-                params=params,
-            )
+            resp = await client.get(url, headers=headers, params=params)
+            if resp.status_code == 401:
+                logger.warning("Graph 401 for mailbox %s, retrying with fresh token", mailbox_id)
+                token = await self._get_access_token(
+                    client_id, refresh_token, mailbox_id, force_refresh=True,
+                )
+                headers["Authorization"] = f"Bearer {token}"
+                resp = await client.get(url, headers=headers, params=params)
             resp.raise_for_status()
             return resp.json()
 

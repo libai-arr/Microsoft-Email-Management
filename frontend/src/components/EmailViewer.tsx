@@ -41,9 +41,13 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
   const codeRegex = /\b(\d{4,8})\b/g;
 
   const renderBodyWithCodes = (html: string) => {
-    const enhanced = html.replace(codeRegex, (match) => {
-      return `<span style="background:#fff7e6;border:1px solid #ffd591;border-radius:4px;padding:2px 8px;font-family:monospace;font-size:18px;font-weight:700;color:#fa8c16;letter-spacing:2px">${match}</span> <button onclick="navigator.clipboard.writeText('${match}');this.textContent='已复制'" style="border:1px solid #ffd591;background:#fff;border-radius:4px;padding:2px 8px;font-size:11px;color:#fa8c16;cursor:pointer">复制</button>`;
-    });
+    const parts = html.split(/(<[^>]*>)/g);
+    const enhanced = parts.map(part => {
+      if (part.startsWith('<')) return part;
+      return part.replace(codeRegex, (match) => {
+        return `<span style="background:#fff7e6;border:1px solid #ffd591;border-radius:4px;padding:2px 8px;font-family:monospace;font-size:18px;font-weight:700;color:#fa8c16;letter-spacing:2px">${match}</span> <button onclick="navigator.clipboard.writeText('${match}');this.textContent='已复制'" style="border:1px solid #ffd591;background:#fff;border-radius:4px;padding:2px 8px;font-size:11px;color:#fa8c16;cursor:pointer">复制</button>`;
+      });
+    }).join('');
     return enhanced;
   };
 
