@@ -1,8 +1,12 @@
 import asyncio
+import os
+import sys
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.config import settings
 from app.database import Base

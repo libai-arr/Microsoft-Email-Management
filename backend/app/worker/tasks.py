@@ -1,4 +1,5 @@
 from arq import cron
+from arq.connections import RedisSettings
 from redis.asyncio import Redis
 
 from app.config import settings
@@ -24,10 +25,10 @@ class WorkerSettings:
     cron_jobs = [
         cron(run_token_check, minute={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55}),
     ]
-    redis_settings = None
+    redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
 
     @staticmethod
-    def on_startup(ctx):
+    async def on_startup(ctx):
         ctx["redis"] = Redis.from_url(settings.REDIS_URL, decode_responses=False)
 
     @staticmethod

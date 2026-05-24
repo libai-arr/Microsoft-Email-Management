@@ -43,8 +43,13 @@ async def list_emails(
             client_id, refresh_token, str(mailbox_id),
             folder=folder, page=page, page_size=page_size, search=search,
         )
-    except Exception:
-        raise HTTPException(status_code=502, detail="Graph API 调用失败")
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(
+            f"Graph API list_emails failed for mailbox {mailbox_id}: {type(exc).__name__}: {exc}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=502, detail=f"Graph API 调用失败: {exc}")
 
     emails = []
     for msg in data.get("value", []):
@@ -77,8 +82,13 @@ async def get_email_detail(
         data = await graph.get_email_body(
             client_id, refresh_token, str(mailbox_id), message_id
         )
-    except Exception:
-        raise HTTPException(status_code=502, detail="Graph API 调用失败")
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(
+            f"Graph API get_email_body failed for mailbox {mailbox_id}: {type(exc).__name__}: {exc}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=502, detail=f"Graph API 调用失败: {exc}")
 
     sender = data.get("from", {}).get("emailAddress", {})
     body_html = data.get("body", {}).get("content", "")

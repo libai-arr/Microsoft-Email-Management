@@ -11,6 +11,9 @@ services:
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      HTTPS_PROXY: http://host.docker.internal:7897
+      HTTP_PROXY: http://host.docker.internal:7897
     depends_on:
       postgres:
         condition: service_healthy
@@ -21,6 +24,9 @@ services:
     build: ./backend
     command: ["python", "-m", "arq", "app.worker.tasks.WorkerSettings"]
     env_file: .env
+    environment:
+      HTTPS_PROXY: http://host.docker.internal:7897
+      HTTP_PROXY: http://host.docker.internal:7897
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,7 +44,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mailbox}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mailbox} -d ${POSTGRES_DB:-mailbox_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
