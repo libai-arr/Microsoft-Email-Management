@@ -1,3 +1,4 @@
+import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -39,10 +40,34 @@ async def list_emails(
     graph = GraphClient(redis)
 
     try:
-        data = await graph.list_emails(
-            client_id, refresh_token, str(mailbox_id),
-            folder=folder, page=page, page_size=page_size, search=search,
-        )
+        if folder == "all":
+            inbox_data, junk_data = await asyncio.gather(
+                graph.list_emails(
+                    client_id, refresh_token, str(mailbox_id),
+                    folder="inbox", page=page, page_size=page_size, search=search,
+                ),
+                graph.list_emails(
+                    client_id, refresh_token, str(mailbox_id),
+                    folder="junk", page=page, page_size=page_size, search=search,
+                ),
+            )
+            inbox_msgs = [
+                {**msg, "_folder": "inbox"} for msg in inbox_data.get("value", [])
+            ]
+            junk_msgs = [
+                {**msg, "_folder": "junk"} for msg in junk_data.get("value", [])
+            ]
+            all_msgs = sorted(
+                inbox_msgs + junk_msgs,
+                key=lambda m: m["receivedDateTime"],
+                reverse=True,
+            )[:page_size]
+        else:
+            data = await graph.list_emails(
+                client_id, refresh_token, str(mailbox_id),
+                folder=folder, page=page, page_size=page_size, search=search,
+            )
+            all_msgs = data.get("value", [])
     except Exception as exc:
         import logging
         logging.getLogger(__name__).error(
@@ -51,8 +76,9 @@ async def list_emails(
         )
         raise HTTPException(status_code=502, detail=f"Graph API 调用失败: {exc}")
 
+    is_all = folder == "all"
     emails = []
-    for msg in data.get("value", []):
+    for msg in all_msgs:
         sender = msg.get("from", {}).get("emailAddress", {})
         emails.append(EmailSummary(
             id=msg["id"],
@@ -62,6 +88,7 @@ async def list_emails(
             preview=msg.get("bodyPreview", ""),
             received_at=msg["receivedDateTime"],
             is_read=msg.get("isRead", False),
+            folder=msg.get("_folder") if is_all else None,
         ))
 
     return emails
