@@ -245,7 +245,7 @@ export default function MailboxList() {
         open={showGroupSelect}
         selectedIds={selectedRowKeys}
         onClose={() => setShowGroupSelect(false)}
-        onSuccess={() => { setSelectedRowKeys([]); loadData(); }}
+        onSuccess={() => { setSelectedRowKeys([]); loadData(); groupsApi.list().then(setGroups); }}
       />
       {emailViewer && (
         <EmailViewer
