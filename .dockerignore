@@ -1,29 +1,24 @@
-# Git
 .git/
 .gitignore
 
-# Python
 __pycache__/
 *.py[cod]
 .venv/
 *.egg-info/
-dist/
 
-# Node
 node_modules/
-frontend/dist/
+frontend/node_modules/
 
-# Environment
 .env
 
-# IDE
 .idea/
 .vscode/
 *.swp
 
-# Docker
 .superpowers/
 .claude/
 
-# OS
 .DS_Store
+
+*.db
+docs/

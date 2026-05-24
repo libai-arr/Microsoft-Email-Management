@@ -1,28 +1,8 @@
 services:
-  frontend:
-    build: ./frontend
+  app:
+    build: .
     ports:
       - "3000:80"
-    depends_on:
-      - api
-
-  api:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    env_file: .env
-    environment:
-      HTTPS_PROXY: http://host.docker.internal:7897
-      HTTP_PROXY: http://host.docker.internal:7897
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-
-  worker:
-    build: ./backend
-    command: ["python", "-m", "arq", "app.worker.tasks.WorkerSettings"]
     env_file: .env
     environment:
       HTTPS_PROXY: http://host.docker.internal:7897
