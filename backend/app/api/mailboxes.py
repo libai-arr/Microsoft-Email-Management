@@ -25,7 +25,7 @@ router = APIRouter()
 @router.get("")
 async def list_mailboxes(
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
+    page_size: int = Query(100, ge=1, le=200),
     search: str | None = None,
     group_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),

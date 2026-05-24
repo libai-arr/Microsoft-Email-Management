@@ -52,6 +52,12 @@ class TestMailboxList:
         resp = await client.get(f"/api/mailboxes?group_id={gid}")
         assert resp.json()["total"] == 1
 
+    async def test_list_allows_page_size_200(self, client: AsyncClient):
+        await _import_sample(client, 1)
+        resp = await client.get("/api/mailboxes?page=1&page_size=200")
+        assert resp.status_code == 200
+        assert resp.json()["page_size"] == 200
+
 
 class TestMailboxImport:
     async def test_append_import(self, client: AsyncClient):
