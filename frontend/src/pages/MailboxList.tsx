@@ -119,12 +119,10 @@ export default function MailboxList() {
           <span style={{ fontFamily: 'monospace' }}>
             {visiblePasswords.has(record.id) ? (passwordCache[record.id] || '...') : '••••••'}
           </span>
-          <Tooltip title={visiblePasswords.has(record.id) ? '隐藏' : '显示'}>
-            {visiblePasswords.has(record.id) ?
-              <EyeInvisibleOutlined style={{ cursor: 'pointer' }} onClick={() => togglePassword(record.id)} /> :
-              <EyeOutlined style={{ cursor: 'pointer' }} onClick={() => togglePassword(record.id)} />
-            }
-          </Tooltip>
+          {visiblePasswords.has(record.id) ?
+            <EyeInvisibleOutlined style={{ cursor: 'pointer' }} onClick={() => togglePassword(record.id)} /> :
+            <EyeOutlined style={{ cursor: 'pointer' }} onClick={() => togglePassword(record.id)} />
+          }
           <Tooltip title="复制">
             <CopyOutlined
               style={{ color: '#999', cursor: 'pointer' }}
