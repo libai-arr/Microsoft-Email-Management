@@ -29,7 +29,7 @@ export default function MailboxList() {
   const [passwordCache, setPasswordCache] = useState<Record<string, string>>({});
   const [emailViewer, setEmailViewer] = useState<{ id: string; email: string } | null>(null);
 
-  const pageRef = useRef({ page: 1, page_size: 10 });
+  const pageRef = useRef({ page: 1, page_size: 100 });
 
   const loadData = useCallback(() => {
     fetch({
@@ -70,13 +70,13 @@ export default function MailboxList() {
   const handleExport = async () => {
     const resp = await mailboxesApi.export({
       ids: selectedRowKeys.length > 0 ? selectedRowKeys : undefined,
-      format: 'csv',
+      format: 'txt',
       include_all: selectedRowKeys.length === 0,
     });
     const url = URL.createObjectURL(new Blob([resp.data]));
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'mailboxes.csv';
+    a.download = 'mailboxes.txt';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -230,7 +230,7 @@ export default function MailboxList() {
           pageSize: data.page_size,
           total: data.total,
           showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50'],
+          pageSizeOptions: ['50', '100', '200'],
           showTotal: (total) => `共 ${total} 条 · 已选 ${selectedRowKeys.length} 条`,
           onChange: (page, pageSize) => {
             pageRef.current = { page, page_size: pageSize };
