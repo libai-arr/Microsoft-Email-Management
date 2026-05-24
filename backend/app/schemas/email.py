@@ -11,6 +11,7 @@ class EmailSummary(BaseModel):
     preview: str
     received_at: datetime
     is_read: bool
+    folder: str | None = None
 
 
 class EmailDetail(BaseModel):
