@@ -105,13 +105,32 @@ class TestMailboxDelete:
 
 
 class TestMailboxExport:
-    async def test_export_csv(self, client: AsyncClient):
+    async def test_export_txt_format(self, client: AsyncClient):
         await _import_sample(client, 2)
         resp = await client.post(
             "/api/mailboxes/export",
-            json={"format": "csv", "include_all": True},
+            json={"include_all": True},
         )
         assert resp.status_code == 200
-        assert "text/csv" in resp.headers["content-type"]
+        assert "text/plain" in resp.headers["content-type"]
+        assert "mailboxes.txt" in resp.headers["content-disposition"]
         lines = resp.text.strip().split("\n")
-        assert len(lines) == 3  # header + 2 rows
+        assert len(lines) == 2  # no header, just 2 data rows
+        parts = lines[0].split("----")
+        assert len(parts) == 4
+        assert parts[0] == "user0@outlook.com"
+        assert parts[1] == "pass0"
+        assert parts[2] == "cid0"
+        assert parts[3] == "rt0"
+
+    async def test_export_selected_ids(self, client: AsyncClient):
+        await _import_sample(client, 3)
+        listing = await client.get("/api/mailboxes")
+        first_id = listing.json()["items"][0]["id"]
+        resp = await client.post(
+            "/api/mailboxes/export",
+            json={"ids": [first_id], "include_all": False},
+        )
+        assert resp.status_code == 200
+        lines = resp.text.strip().split("\n")
+        assert len(lines) == 1

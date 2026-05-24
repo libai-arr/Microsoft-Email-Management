@@ -118,30 +118,24 @@ async def export_mailboxes(
 
     await log_audit(
         db, "batch_export", len(rows),
-        detail={"format": body.format},
+        detail={"format": "txt"},
         ip_address=ip,
     )
     await db.commit()
 
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["邮箱地址", "密码", "Client_ID", "刷新令牌", "分组", "令牌状态"])
-
+    lines = []
     for m in rows:
-        writer.writerow([
-            m.email,
-            crypto.decrypt(m.password_encrypted),
-            crypto.decrypt(m.client_id_encrypted),
-            crypto.decrypt(m.refresh_token_encrypted),
-            "",
-            m.token_status,
-        ])
+        email = m.email
+        password = crypto.decrypt(m.password_encrypted)
+        client_id = crypto.decrypt(m.client_id_encrypted)
+        refresh_token = crypto.decrypt(m.refresh_token_encrypted)
+        lines.append(f"{email}----{password}----{client_id}----{refresh_token}")
 
-    output.seek(0)
+    content = "\n".join(lines)
     return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=mailboxes.csv"},
+        iter([content]),
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=mailboxes.txt"},
     )
 
 
