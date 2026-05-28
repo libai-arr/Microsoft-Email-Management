@@ -1,10 +1,12 @@
 # Stage 1: Build frontend
 FROM node:20-slim AS frontend-build
 WORKDIR /app
+ENV NODE_ENV=development
+ENV PATH=/app/node_modules/.bin:$PATH
 COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci --no-audit --no-fund
+RUN npm ci --include=dev --no-audit --no-fund
 COPY frontend/ .
-RUN npm run build
+RUN tsc -b && vite build
 
 # Stage 2: Runtime
 FROM python:3.12-slim
