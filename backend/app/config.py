@@ -1,13 +1,19 @@
 import base64
+from pathlib import Path
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+
+ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://mailbox:mailbox_pass@localhost:5432/mailbox_db"
     REDIS_URL: str = "redis://localhost:6379/0"
     ENCRYPTION_KEY: str = ""
+    APP_SHARED_PASSWORD: str = ""
+    APP_SHARED_PASSWORD_SESSION_TTL: int = 43200
     TOKEN_CHECK_INTERVAL: int = 300
     TOKEN_CHECK_CONCURRENCY: int = 10
     ACCESS_TOKEN_CACHE_TTL: int = 3000
@@ -22,7 +28,14 @@ class Settings(BaseSettings):
             raise ValueError("ENCRYPTION_KEY must be a 32-byte base64-encoded string")
         return v
 
-    model_config = {"env_file": ".env"}
+    @field_validator("APP_SHARED_PASSWORD")
+    @classmethod
+    def validate_app_shared_password(cls, v: str) -> str:
+        if not v:
+            raise ValueError("APP_SHARED_PASSWORD is required")
+        return v
+
+    model_config = {"env_file": ENV_FILE, "extra": "ignore"}
 
 
 settings = Settings()

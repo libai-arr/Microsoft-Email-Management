@@ -11,6 +11,16 @@ frontend/dist/
 
 # Environment
 .env
+.env.*
+!.env.example
+
+# Local data
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.tsbuildinfo
+~$*
 
 # IDE
 .idea/

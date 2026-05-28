@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { message } from 'antd';
 import { emailsApi } from '@/services/api';
 import type { EmailSummary, EmailDetail } from '@/types';
 
@@ -14,6 +15,9 @@ export function useEmails(mailboxId: string) {
     try {
       const result = await emailsApi.list(mailboxId, params);
       setEmails(result);
+    } catch (error: any) {
+      setEmails([]);
+      message.error(error?.response?.data?.detail || '获取邮件列表失败');
     } finally {
       setLoading(false);
     }
@@ -24,6 +28,9 @@ export function useEmails(mailboxId: string) {
     try {
       const result = await emailsApi.detail(mailboxId, messageId);
       setDetail(result);
+    } catch (error: any) {
+      setDetail(null);
+      message.error(error?.response?.data?.detail || '获取邮件详情失败');
     } finally {
       setLoading(false);
     }

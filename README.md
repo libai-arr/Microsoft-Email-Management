@@ -37,8 +37,11 @@ cp .env.example .env
 # 2. 生成加密密钥并填入 .env 的 ENCRYPTION_KEY
 python3 -c "import secrets, base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
 
-# 3. 启动所有服务
-docker compose up -d
+# 3. 设置访问密码（必填）
+# APP_SHARED_PASSWORD=your-password
+
+# 4. 启动所有服务
+docker compose up -d --build
 ```
 
 启动后访问 http://localhost:3000。
@@ -47,10 +50,9 @@ docker compose up -d
 
 | 服务 | 端口 |
 |------|------|
-| 前端 | 3000 |
-| API | 8000 |
-| PostgreSQL | 5432 |
-| Redis | 6379 |
+| Web 应用 | 3000 |
+| PostgreSQL | Compose 内网 |
+| Redis | Compose 内网 |
 
 ## 项目结构
 
@@ -88,7 +90,7 @@ docker compose up -d
 | 批量 | `POST /api/mailboxes/batch/copy` | 批量复制信息 |
 | 批量 | `POST /api/mailboxes/batch/delete` | 批量删除 |
 
-API 文档：启动后访问 http://localhost:8000/docs（Swagger UI）。
+API 文档：容器内 API 由 nginx 代理提供，对外统一走 http://localhost:3000/api。
 
 ## 本地开发
 
@@ -113,8 +115,40 @@ pytest
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `ENCRYPTION_KEY` | AES 加密密钥（必填） | — |
+| `APP_SHARED_PASSWORD` | 访问系统时输入的共享密码（必填） | — |
+| `APP_SHARED_PASSWORD_SESSION_TTL` | 访问会话有效期（秒） | `43200` |
 | `DATABASE_URL` | PostgreSQL 连接串 | `postgresql+asyncpg://mailbox:mailbox_pass@postgres:5432/mailbox_db` |
 | `REDIS_URL` | Redis 连接地址 | `redis://redis:6379/0` |
 | `TOKEN_CHECK_INTERVAL` | 令牌检查间隔（秒） | `300` |
 | `TOKEN_CHECK_CONCURRENCY` | 令牌检查并发数 | `10` |
 | `ACCESS_TOKEN_CACHE_TTL` | Access Token 缓存时间（秒） | `3000` |
+
+## 上传 GitHub 前检查
+
+- 不要提交真实 `.env`、`backend/.env`
+- 不要提交本地数据库文件：`*.db`、`*.sqlite*`
+- 不要提交 Office 临时文件：`~$*`
+- 检查是否存在不该公开的本地工具产物（如 `.superpowers/`）
+- 推送前先运行 `git status --short` 确认工作区内容符合预期
+
+## 服务器部署（Docker Compose）
+
+1. 将仓库上传到 GitHub 后，在服务器上拉取代码。
+2. 复制环境变量模板：
+   ```bash
+   cp .env.example .env
+   ```
+3. 填写以下生产配置：
+   - `ENCRYPTION_KEY`：使用随机生成的 32 字节 base64 密钥
+   - `APP_SHARED_PASSWORD`：设置强密码
+   - `POSTGRES_PASSWORD`：不要使用默认值
+   - 如有需要，再调整 `DATABASE_URL`、`REDIS_URL`
+4. 启动服务：
+   ```bash
+   docker compose up -d --build
+   ```
+5. 验证：
+   - 打开 `http://<服务器IP或域名>:3000`
+   - 应先看到访问密码页
+   - 输入正确共享密码后进入系统
+   - 未授权直接访问 `/api/*` 应返回 401

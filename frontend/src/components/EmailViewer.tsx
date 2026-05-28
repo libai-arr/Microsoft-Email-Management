@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Modal, Tabs, Input, Button, List, Spin, Empty, Typography, Tag } from 'antd';
+import { Modal, Tabs, Input, Button, List, Spin, Empty, Typography, Tag, Grid } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useEmails } from '@/hooks/useEmails';
 import type { EmailSummary } from '@/types';
@@ -12,7 +12,11 @@ interface Props {
   onClose: () => void;
 }
 
+const { useBreakpoint } = Grid;
+
 export default function EmailViewer({ open, mailboxId, email, onClose }: Props) {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const { emails, detail, loading, fetchList, fetchDetail } = useEmails(mailboxId);
   const [folder, setFolder] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -42,13 +46,13 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
       title={`邮件列表 — ${email}`}
       open={open}
       onCancel={onClose}
-      width="90vw"
-      style={{ top: '5vh' }}
-      styles={{ body: { height: '75vh', padding: 0, display: 'flex', overflow: 'hidden' } }}
+      width={isMobile ? '96vw' : '90vw'}
+      style={{ top: isMobile ? 8 : '5vh' }}
+      styles={{ body: { height: isMobile ? '82vh' : '75vh', padding: 0, display: 'flex', flexDirection: isMobile ? 'column' : 'row', overflow: 'hidden' } }}
       footer={null}
     >
       {/* Left Panel */}
-      <div style={{ width: 340, borderRight: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: isMobile ? '100%' : 340, minHeight: isMobile ? 280 : undefined, borderRight: isMobile ? 'none' : '1px solid #f0f0f0', borderBottom: isMobile ? '1px solid #f0f0f0' : 'none', display: 'flex', flexDirection: 'column' }}>
         <Tabs
           activeKey={folder}
           onChange={setFolder}
@@ -127,7 +131,7 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
       </div>
 
       {/* Right Panel */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {!detail ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Empty description="请从左侧选择一封邮件查看" />
@@ -138,7 +142,7 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
               <Typography.Title level={4} style={{ marginBottom: 8 }}>
                 {detail.subject}
               </Typography.Title>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 13 }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: '50%', background: '#1890ff',
                   color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -146,7 +150,7 @@ export default function EmailViewer({ open, mailboxId, email, onClose }: Props) 
                 }}>
                   {detail.sender_name?.[0]?.toUpperCase() || '?'}
                 </div>
-                <div>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontWeight: 500 }}>{detail.sender_name}</div>
                   <div style={{ fontSize: 11, color: '#999' }}>{detail.sender_email}</div>
                 </div>

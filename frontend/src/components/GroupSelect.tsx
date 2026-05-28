@@ -79,11 +79,12 @@ export default function GroupSelect({ open, selectedIds, onClose, onSuccess }: P
           <>
             {menu}
             <Divider style={{ margin: '8px 0' }} />
-            <Space style={{ padding: '0 8px 4px' }}>
+            <Space style={{ padding: '0 8px 4px', display: 'flex', flexWrap: 'wrap' }}>
               <Input
                 placeholder="新分组名称"
                 ref={inputRef}
                 value={newGroupName}
+                style={{ flex: '1 1 180px', minWidth: 0 }}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
                 onPressEnter={handleCreateGroup}

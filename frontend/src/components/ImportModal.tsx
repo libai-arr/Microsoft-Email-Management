@@ -54,7 +54,7 @@ export default function ImportModal({ open, onClose, onSuccess }: Props) {
   };
 
   const footer = (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
       <Button onClick={onClose}>取消</Button>
       <Button type="primary" loading={loading} onClick={() => handleImport('append')}>
         追加导入
@@ -76,12 +76,13 @@ export default function ImportModal({ open, onClose, onSuccess }: Props) {
       title="导入邮箱账户"
       open={open}
       onCancel={onClose}
-      width={700}
+      width="min(700px, 96vw)"
       footer={footer}
     >
       <div style={{
         background: '#f6f8fa', border: '1px solid #e8e8e8',
         borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 12,
+        overflowWrap: 'anywhere', wordBreak: 'break-word'
       }}>
         <Typography.Text type="secondary">支持格式：</Typography.Text>
         <br />

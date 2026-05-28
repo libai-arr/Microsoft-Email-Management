@@ -103,10 +103,10 @@ export default function MailboxList() {
       title: '邮箱地址',
       dataIndex: 'email',
       render: (email: string) => (
-        <Space>
-          <span>{email}</span>
+        <Space style={{ maxWidth: 260, width: '100%' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</span>
           <Tooltip title="复制">
-            <CopyOutlined style={{ color: '#999', cursor: 'pointer' }} onClick={() => copyToClipboard(email)} />
+            <CopyOutlined style={{ color: '#999', cursor: 'pointer', flexShrink: 0 }} onClick={() => copyToClipboard(email)} />
           </Tooltip>
         </Space>
       ),
@@ -177,7 +177,7 @@ export default function MailboxList() {
   return (
     <div>
       {/* Toolbar */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', width: '100%' }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowImport(true)}>
           导入邮箱
         </Button>
@@ -196,9 +196,9 @@ export default function MailboxList() {
           </Button>
         </Popconfirm>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
           <Select
-            style={{ width: 140 }}
+            style={{ width: '100%', maxWidth: 140, minWidth: 120, flex: '1 1 140px' }}
             placeholder="全部分组"
             allowClear
             onChange={(v) => { setGroupFilter(v); pageRef.current.page = 1; }}
@@ -206,7 +206,7 @@ export default function MailboxList() {
           />
           <Input.Search
             placeholder="搜索邮箱地址..."
-            style={{ width: 220 }}
+            style={{ width: '100%', maxWidth: 220, minWidth: 180, flex: '1 1 220px' }}
             allowClear
             onSearch={(v) => { setSearch(v); pageRef.current.page = 1; }}
           />
@@ -219,6 +219,7 @@ export default function MailboxList() {
         dataSource={data.items}
         rowKey="id"
         loading={loading}
+        scroll={{ x: 980 }}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys as string[]),

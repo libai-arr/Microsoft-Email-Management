@@ -4,7 +4,17 @@ import type {
   EmailSummary, EmailDetail, TokenStatus,
 } from '@/types';
 
-const http = axios.create({ baseURL: '/api' });
+const http = axios.create({ baseURL: '/api', withCredentials: true });
+
+http.interceptors.response.use(
+  response => response,
+  error => {
+    if (error?.response?.status === 401) {
+      window.dispatchEvent(new Event('app:unauthorized'));
+    }
+    return Promise.reject(error);
+  },
+);
 
 export const groupsApi = {
   list: () => http.get<Group[]>('/groups').then(r => r.data),
@@ -43,4 +53,13 @@ export const tokensApi = {
     http.get<TokenStatus[]>('/tokens/status', { params: { ids: ids.join(',') } }).then(r => r.data),
   check: (ids: string[]) =>
     http.post('/tokens/check', { ids }).then(r => r.data),
+};
+
+export const authApi = {
+  unlock: (password: string) =>
+    http.post<{ ok: boolean }>('/auth/unlock', { password }).then(r => r.data),
+  status: () =>
+    http.get<{ unlocked: boolean }>('/auth/status').then(r => r.data),
+  logout: () =>
+    http.post<{ ok: boolean }>('/auth/logout').then(r => r.data),
 };

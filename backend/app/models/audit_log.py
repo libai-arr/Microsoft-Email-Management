@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 
 from sqlalchemy import String, Integer, DateTime, BigInteger, Text
 from sqlalchemy import JSON
@@ -18,7 +19,7 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     target_count: Mapped[int] = mapped_column(Integer, nullable=False)
     detail: Mapped[dict] = mapped_column(JSON, default=dict)
-    ip_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

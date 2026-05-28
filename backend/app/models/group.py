@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import List, Optional
 
 from sqlalchemy import String, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,9 +13,9 @@ class Group(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
-    mailboxes: Mapped[list["Mailbox"]] = relationship(back_populates="group")
+    mailboxes: Mapped[List["Mailbox"]] = relationship(back_populates="group")

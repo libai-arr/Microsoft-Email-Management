@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Optional
 
 import httpx
 import msal
@@ -16,7 +17,7 @@ GRAPH_TIMEOUT = httpx.Timeout(30.0)
 
 
 class GraphClient:
-    def __init__(self, redis: Redis):
+    def __init__(self, redis: Optional[Redis]):
         self._redis = redis
 
     async def _get_access_token(
@@ -24,8 +25,12 @@ class GraphClient:
         *, force_refresh: bool = False,
     ) -> str:
         cache_key = f"access_token:{mailbox_id}"
-        if not force_refresh:
-            cached = await self._redis.get(cache_key)
+        if not force_refresh and self._redis is not None:
+            try:
+                cached = await self._redis.get(cache_key)
+            except Exception as exc:
+                logger.warning("Redis cache get failed for mailbox %s: %s", mailbox_id, exc)
+                cached = None
             if cached:
                 return cached.decode()
 
@@ -44,7 +49,11 @@ class GraphClient:
             )
 
         token = result["access_token"]
-        await self._redis.setex(cache_key, settings.ACCESS_TOKEN_CACHE_TTL, token)
+        if self._redis is not None:
+            try:
+                await self._redis.setex(cache_key, settings.ACCESS_TOKEN_CACHE_TTL, token)
+            except Exception as exc:
+                logger.warning("Redis cache set failed for mailbox %s: %s", mailbox_id, exc)
         return token
 
     async def list_emails(
